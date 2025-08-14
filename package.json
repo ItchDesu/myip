@@ -1,0 +1,17 @@
+{
+  "name": "myip",
+  "version": "1.0.0",
+  "description": "Simple Express app to display IPv4 and IPv6",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "ejs": "^3.1.10",
+    "express": "^5.1.0"
+  }
+}
