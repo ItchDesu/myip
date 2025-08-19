@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Just a moment...</title>
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #fafafa;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #333;
+    }
+    .card {
+      text-align: center;
+      max-width: 480px;
+      padding: 2rem;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+      animation: fadeIn 0.6s ease-out;
+    }
+    .logo {
+      font-size: 1.4rem;
+      font-weight: bold;
+      margin-bottom: 1.5rem;
+      color: #111827;
+    }
+    h2 {
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
+      color: #111827;
+    }
+    p {
+      font-size: 0.95rem;
+      color: #555;
+      margin-bottom: 1.5rem;
+    }
+    .loader {
+      width: 48px;
+      height: 48px;
+      border: 5px solid #e5e7eb;
+      border-top: 5px solid #2563eb;
+      border-radius: 50%;
+      margin: 1.5rem auto;
+      animation: spin 1s linear infinite;
+    }
+    .challenge {
+      display: none;
+      margin-top: 1rem;
+      padding: 1rem;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      background: #f9fafb;
+    }
+    .challenge input {
+      margin-top: 0.5rem;
+      padding: 0.5rem;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      width: 100%;
+    }
+    #challengeBtn {
+      margin-top: 1rem;
+      padding: 0.5rem 1rem;
+      background: #2563eb;
+      border: none;
+      color: #fff;
+      font-size: 0.9rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    #challengeBtn:hover {
+      background: #1e40af;
+    }
+    .footer {
+      margin-top: 1.5rem;
+      font-size: 0.8rem;
+      color: #9ca3af;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0); }
+      100% { transform: rotate(360deg); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">🔒 Security Check</div>
+    <h2>Checking your browser before accessing...</h2>
+    <div class="loader"></div>
+    <p id="msg">Please wait while we verify you are human...</p>
+
+    <form method="POST" action="/verify" id="captchaForm">
+      <!-- token invisible -->
+      <input type="hidden" id="captcha_token" name="captcha_token">
+
+      <!-- reto matemático opcional -->
+      <div class="challenge" id="challengeBox">
+        <p>Solve this: <span id="num1"></span> + <span id="num2"></span> = ?</p>
+        <input type="number" id="challengeAnswer" name="challengeAnswer" disabled>
+        <button type="submit" id="challengeBtn">Submit</button>
+      </div>
+    </form>
+
+    <div class="footer">DDoS protection by <strong>YourService</strong></div>
+  </div>
+
+  <script>
+    async function getCaptchaToken() {
+      try {
+        let res = await fetch("/captcha/generate", { method: "POST" });
+        let data = await res.json();
+        document.getElementById("captcha_token").value = data.token;
+
+        if (data.score && data.score < 0.5) {
+          // Mostrar reto visual
+          showChallenge();
+        } else {
+          // Enviar automáticamente si todo va bien
+          document.getElementById("captchaForm").submit();
+        }
+      } catch (err) {
+        document.getElementById("msg").innerText = "❌ Error generating captcha.";
+        console.error("Captcha error", err);
+      }
+    }
+
+    function showChallenge() {
+      const box = document.getElementById("challengeBox");
+      const input = document.getElementById("challengeAnswer");
+
+      const n1 = Math.floor(Math.random() * 9) + 1;
+      const n2 = Math.floor(Math.random() * 9) + 1;
+      document.getElementById("num1").innerText = n1;
+      document.getElementById("num2").innerText = n2;
+
+      box.style.display = "block";
+      input.disabled = false;
+      input.required = true;
+      document.getElementById("captchaForm").dataset.solution = n1 + n2;
+      document.getElementById("msg").innerText = "Please solve the challenge to continue.";
+    }
+
+    // Validar reto antes de enviar
+    document.getElementById("captchaForm").addEventListener("submit", function(e) {
+      const box = document.getElementById("challengeBox");
+      if (box.style.display === "block") {
+        const expected = parseInt(this.dataset.solution, 10);
+        const given = parseInt(document.getElementById("challengeAnswer").value, 10);
+        if (expected !== given) {
+          e.preventDefault();
+          alert("❌ Wrong answer, try again.");
+        }
+      }
+    });
+
+    window.onload = getCaptchaToken;
+  </script>
+</body>
+</html>

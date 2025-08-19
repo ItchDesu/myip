@@ -1,0 +1,27 @@
+:80  {
+    # Rutas del captcha → siempre al backend
+    @captcha path /captcha/generate
+    handle @captcha {
+       reverse_proxy 127.0.0.1:3001
+    }
+
+    # Rutas de verificación
+    @verify path /verify
+    handle @verify {
+        reverse_proxy 127.0.0.1:3001
+    }
+
+    # Si no hay cookie válida -> mostrar la página de validación
+    @notverified {
+        not header_regexp cookie Cookie antiddos_ok=.*
+    }
+    handle @notverified {
+        root * /var/www/antiddos
+        file_server
+    }
+
+    # Resto del sitio (solo con cookie válida)
+    handle {
+        reverse_proxy 127.0.0.1:3001
+    }
+}
