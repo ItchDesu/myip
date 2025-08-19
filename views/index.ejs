@@ -1,27 +1,198 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mi IP</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>My IP Address</title>
+  <meta name="color-scheme" content="light dark">
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen">
-  <div class="bg-white shadow-lg rounded-lg p-8 text-center">
-    <h1 class="text-2xl font-bold mb-4">Mi dirección IP</h1>
-    <p class="text-lg">IPv4: <span id="ipv4" class="font-mono">Cargando...</span></p>
-    <p class="text-lg">IPv6: <span id="ipv6" class="font-mono">Cargando...</span></p>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 to-white dark:from-slate-900 dark:to-slate-950 flex items-center justify-center p-4">
+  <div class="w-full max-w-xl">
+    <div class="bg-white/80 dark:bg-slate-900/70 backdrop-blur-xl shadow-2xl rounded-2xl ring-1 ring-black/5 dark:ring-white/10">
+      <!-- Header -->
+      <div class="p-8 border-b border-slate-200/70 dark:border-slate-700/50">
+        <h1 class="text-2xl sm:text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 text-center">
+          My IP Address
+        </h1>
+        <p class="mt-2 text-center text-sm text-slate-600 dark:text-slate-400">
+          Quickly check your public IPv4 and IPv6 and their geolocation from your geofeed.
+        </p>
+      </div>
+
+      <!-- Tabs -->
+      <div class="px-4 pt-4">
+        <div class="mx-auto max-w-sm grid grid-cols-2 rounded-xl bg-slate-100 dark:bg-slate-800 p-1">
+          <button id="tab-v4" class="tab-btn inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all">
+            <span>IPv4</span>
+          </button>
+          <button id="tab-v6" class="tab-btn inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all">
+            <span>IPv6</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Panels -->
+      <div class="p-6 sm:p-8">
+        <!-- IPv4 Panel -->
+        <section id="panel-v4" class="panel hidden">
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">IPv4</h2>
+              <p id="ipv4" class="mt-1 font-mono text-lg text-slate-800 dark:text-slate-200 select-all">Loading…</p>
+              <p id="ipv4-location" class="mt-2 inline-flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                <span class="inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
+                <span class="truncate">Locating…</span>
+              </p>
+              <p id="ipv4-note" class="mt-2 hidden text-xs text-slate-500 dark:text-slate-400">
+                If you’re behind a proxy, we rely on <code class="px-1 rounded bg-slate-100 dark:bg-slate-800">X-Forwarded-For</code>.
+              </p>
+            </div>
+            <div class="shrink-0">
+              <button id="copy-v4" class="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 active:scale-[0.99]">
+                Copy
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- IPv6 Panel -->
+        <section id="panel-v6" class="panel hidden">
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">IPv6</h2>
+              <p id="ipv6" class="mt-1 font-mono text-lg text-slate-800 dark:text-slate-200 select-all">Loading…</p>
+              <p id="ipv6-location" class="mt-2 inline-flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                <span class="inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
+                <span class="truncate">Locating…</span>
+              </p>
+              <p id="ipv6-note" class="mt-2 hidden text-xs text-slate-500 dark:text-slate-400">
+                No IPv6? Your network or client may not be advertising one.
+              </p>
+            </div>
+            <div class="shrink-0">
+              <button id="copy-v6" class="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 active:scale-[0.99]">
+                Copy
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Footer helper -->
+        <div class="mt-6 text-center">
+          <span id="status-badge" class="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium border-slate-200 text-slate-600 bg-white dark:border-slate-700 dark:text-slate-300 dark:bg-slate-900">
+            Fetching data…
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tiny attribution -->
+    <p class="mt-4 text-center text-xs text-slate-500 dark:text-slate-400">
+      Powered by Buzzster
+    </p>
   </div>
+
   <script>
-    fetch('/api/ip')
-      .then(res => res.json())
+    // --- Tabs logic ---
+    const tabV4 = document.getElementById('tab-v4');
+    const tabV6 = document.getElementById('tab-v6');
+    const panelV4 = document.getElementById('panel-v4');
+    const panelV6 = document.getElementById('panel-v6');
+    const statusBadge = document.getElementById('status-badge');
+
+    function activate(tab) {
+      const activeClasses = 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow';
+      const idleClasses = 'bg-transparent text-slate-600 dark:text-slate-400';
+      // buttons
+      [tabV4, tabV6].forEach(btn => btn.classList.remove(...activeClasses.split(' '), ...idleClasses.split(' ')));
+      if (tab === 'v4') {
+        tabV4.classList.add(...activeClasses.split(' '));
+        tabV6.classList.add(...idleClasses.split(' '));
+      } else {
+        tabV6.classList.add(...activeClasses.split(' '));
+        tabV4.classList.add(...idleClasses.split(' '));
+      }
+      // panels
+      panelV4.classList.toggle('hidden', tab !== 'v4');
+      panelV6.classList.toggle('hidden', tab !== 'v6');
+    }
+    tabV4.addEventListener('click', () => activate('v4'));
+    tabV6.addEventListener('click', () => activate('v6'));
+    activate('v4'); // default
+
+    // --- Fetch data ---
+    const el = {
+      ipv4: document.getElementById('ipv4'),
+      ipv6: document.getElementById('ipv6'),
+      ipv4Loc: document.getElementById('ipv4-location'),
+      ipv6Loc: document.getElementById('ipv6-location'),
+      ipv4Note: document.getElementById('ipv4-note'),
+      ipv6Note: document.getElementById('ipv6-note'),
+      copyV4: document.getElementById('copy-v4'),
+      copyV6: document.getElementById('copy-v6'),
+    };
+
+    function setBadge(text, ok=true) {
+      statusBadge.textContent = text;
+      statusBadge.classList.toggle('border-emerald-200', ok);
+      statusBadge.classList.toggle('bg-emerald-50', ok);
+      statusBadge.classList.toggle('text-emerald-700', ok);
+      statusBadge.classList.toggle('dark:bg-emerald-900/30', ok);
+      statusBadge.classList.toggle('dark:text-emerald-300', ok);
+      statusBadge.classList.toggle('border-red-200', !ok);
+      statusBadge.classList.toggle('bg-red-50', !ok);
+      statusBadge.classList.toggle('text-red-700', !ok);
+      statusBadge.classList.toggle('dark:bg-red-900/30', !ok);
+      statusBadge.classList.toggle('dark:text-red-300', !ok);
+    }
+
+    function setIP(idEl, locEl, value, location) {
+      idEl.textContent = value || 'Not available';
+      if (location) {
+        locEl.innerHTML = `<span class="inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
+                           <span class="truncate">${location}</span>`;
+      } else {
+        locEl.innerHTML = `<span class="inline-flex h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+                           <span class="truncate">No geolocation</span>`;
+      }
+    }
+
+    function attachCopy(btn, getter) {
+      btn.addEventListener('click', async () => {
+        try {
+          const text = getter();
+          if (!text || text === 'Not available' || text === 'Loading…') return;
+          await navigator.clipboard.writeText(text);
+          const old = btn.textContent;
+          btn.textContent = 'Copied';
+          setTimeout(() => (btn.textContent = old), 1200);
+        } catch (e) {
+          const old = btn.textContent;
+          btn.textContent = 'Failed';
+          setTimeout(() => (btn.textContent = old), 1200);
+        }
+      });
+    }
+
+    attachCopy(el.copyV4, () => el.ipv4.textContent.trim());
+    attachCopy(el.copyV6, () => el.ipv6.textContent.trim());
+
+    fetch('/api/ip', { cache: 'no-store' })
+      .then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)))
       .then(data => {
-        document.getElementById('ipv4').textContent = data.ipv4 || 'No disponible';
-        document.getElementById('ipv6').textContent = data.ipv6 || 'No disponible';
+        setIP(el.ipv4, el.ipv4Loc, data.ipv4, data.ipv4Location);
+        setIP(el.ipv6, el.ipv6Loc, data.ipv6, data.ipv6Location);
+        if (!data.ipv4) el.ipv4Note.classList.remove('hidden');
+        if (!data.ipv6) el.ipv6Note.classList.remove('hidden');
+        setBadge('Data loaded');
       })
       .catch(() => {
-        document.getElementById('ipv4').textContent = 'Error';
-        document.getElementById('ipv6').textContent = 'Error';
+        el.ipv4.textContent = 'Error';
+        el.ipv6.textContent = 'Error';
+        el.ipv4Loc.textContent = '';
+        el.ipv6Loc.textContent = '';
+        setBadge('Failed to fetch', false);
       });
   </script>
 </body>
